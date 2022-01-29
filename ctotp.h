@@ -7,6 +7,11 @@ class CTOTP : public QObject
 {
     Q_OBJECT
 
+public:
+    enum {
+        DEFAULT_INIT_HOTP_COUNTER = 1
+    };
+
 private:
     typedef union _totp_counter_ {
         qint64          raw_64;
@@ -31,9 +36,11 @@ public:
 
     QString base32Encoding(QString value, bool haspad=false);
 
-    QString getKeyUrl(QString key, QString issuer, QString accountname);
+    QString getTotpKeyUrl(QString key, QString issuer, QString accountname);
+    QString getHotpKeyUrl(QString key, QString issuer, QString accountname);
 
-    QString getCurrentTotpKey(QString key, int offset=0);
+    QString getCurrentTotpPassword(QString key, int offset=0);
+    QString getCurrentHotpPassword(QString key, int counter);
 
 signals:
 

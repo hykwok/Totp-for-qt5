@@ -127,7 +127,7 @@ void MainWindow::clicked_test(bool)
     QString str_key_base32 = this->m_totp.base32Encoding(str_key);
     this->edit_output_key->setText(str_key_base32);
 
-    QString str_totp = this->m_totp.getCurrentTotpKey(str_key);
+    QString str_totp = this->m_totp.getCurrentTotpPassword(str_key);
     this->edit_output_totp->setText(str_totp);
 
     QString str_issuer = this->edit_issuer->text();
@@ -141,7 +141,7 @@ void MainWindow::clicked_test(bool)
         str_acc = "Unknown";
     }
 
-    QString key_url = this->m_totp.getKeyUrl(str_key, str_issuer, str_acc);
+    QString key_url = this->m_totp.getTotpKeyUrl(str_key, str_issuer, str_acc);
 
     this->edit_key_url->setText(key_url);
 
@@ -156,7 +156,7 @@ void MainWindow::timeout_totp()
 {
     if(this->m_key.isEmpty()) return;
 
-    QString str_totp = this->m_totp.getCurrentTotpKey(this->m_key);
+    QString str_totp = this->m_totp.getCurrentTotpPassword(this->m_key);
     this->edit_output_totp->setText(str_totp);
 }
 

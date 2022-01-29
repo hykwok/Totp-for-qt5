@@ -81,7 +81,7 @@ QByteArray CTOTP::convertToBigEndian(qint64 value)
 CTOTP::CTOTP(QObject *parent) : QObject(parent)
 {
     this->no_of_digial = DEFAULT_NO_OF_DIGITAL;
-}
+ }
 
 QString CTOTP::base32Encoding(QString value, bool haspad)
 {
@@ -93,7 +93,7 @@ QString CTOTP::base32Encoding(QString value, bool haspad)
     return QString::fromUtf8(out_raw);
 }
 
-QString CTOTP::getKeyUrl(QString key, QString issuer, QString accountname)
+QString CTOTP::getTotpKeyUrl(QString key, QString issuer, QString accountname)
 {
     // Reference: https://github.com/google/google-authenticator/wiki/Key-Uri-Format
 
@@ -115,16 +115,46 @@ QString CTOTP::getKeyUrl(QString key, QString issuer, QString accountname)
     return QString("otpauth://%1/%2?%3").arg(str_type).arg(str_label).arg(str_param);
 }
 
-QString CTOTP::getCurrentTotpKey(QString key, int offset)
+QString CTOTP::getHotpKeyUrl(QString key, QString issuer, QString accountname)
+{
+    // Reference: https://github.com/google/google-authenticator/wiki/Key-Uri-Format
+
+    // for HOTP
+    QString str_type = "hotp";
+
+    QString str_label;
+
+    QString url_issuer = QUrl::toPercentEncoding(issuer);
+    QString url_accountname = QUrl::toPercentEncoding(accountname);
+
+    str_label = QString("%1:%2").arg(url_issuer).arg(url_accountname);
+
+    QString str_key = base32Encoding(key);
+
+    QString str_param;
+    str_param = QString("secret=%1&issuer=%2&counter=%3").arg(str_key).arg(url_issuer).arg(DEFAULT_INIT_HOTP_COUNTER);
+
+    return QString("otpauth://%1/%2?%3").arg(str_type).arg(str_label).arg(str_param);
+}
+
+QString CTOTP::getCurrentTotpPassword(QString key, int offset)
 {
     // prepare TOTP (refer to RFC 6238)
+    qint64 ctime = QDateTime::currentMSecsSinceEpoch();
+ 
+    qint64 counter = floor(ctime / (TOTP_TIME_INTERVAL * 1000));
+    counter += offset;
+
+    return getCurrentHotpPassword(key, counter);
+}
+
+QString CTOTP::getCurrentHotpPassword(QString key, int counter)
+{
+    // get HOTP (refer to RFC 4226)
     QByteArray raw_key = key.toUtf8();
 
-    qint64 counter = floor(QDateTime::currentMSecsSinceEpoch() / (TOTP_TIME_INTERVAL * 1000));
+    QByteArray raw_challenge = convertToBigEndian(counter);
 
-    QByteArray raw_challenge = convertToBigEndian(counter + offset);
-
-    // get HOTP (refer to RFC 4226)
     QByteArray hash_result = QMessageAuthenticationCode::hash(raw_challenge, raw_key, QCryptographicHash::Sha1);
 
     // get truncated hash
